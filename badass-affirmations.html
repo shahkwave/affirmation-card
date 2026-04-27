@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRAW YOUR TRUTH</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0806;
+    --cream: #f0e8d8;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --red: #c1341a;
+    --smoke: #1a1612;
+    --card-bg: #13100d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--cream);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201,168,76,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(193,52,26,0.08) 0%, transparent 50%),
+      repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(201,168,76,0.015) 80px, rgba(201,168,76,0.015) 81px),
+      repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(201,168,76,0.015) 80px, rgba(201,168,76,0.015) 81px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 30px 20px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 12vw, 96px);
+    letter-spacing: 0.08em;
+    color: var(--cream);
+    line-height: 0.9;
+    text-shadow: 0 0 80px rgba(201,168,76,0.3);
+  }
+
+  .header h1 span {
+    color: var(--gold);
+    display: block;
+  }
+
+  .header p {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(240,232,216,0.4);
+    margin-top: 12px;
+  }
+
+  /* CARD */
+  .card-scene {
+    perspective: 1200px;
+    width: min(380px, 90vw);
+    height: min(560px, 130vw);
+    margin: 0 auto 48px;
+  }
+
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(201,168,76,0.3);
+    overflow: hidden;
+  }
+
+  /* CARD BACK */
+  .card-back {
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .card-back::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+  }
+
+  .card-back::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 70% 70% at 50% 50%, rgba(201,168,76,0.06) 0%, transparent 70%);
+  }
+
+  .back-symbol {
+    font-size: 80px;
+    line-height: 1;
+    filter: drop-shadow(0 0 20px rgba(201,168,76,0.4));
+    position: relative;
+    z-index: 1;
+  }
+
+  .back-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    margin-top: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .back-sub {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: rgba(201,168,76,0.4);
+    margin-top: 8px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
+  }
+
+  .corner-ornament {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    opacity: 0.4;
+  }
+  .corner-ornament.tl { top: 20px; left: 20px; }
+  .corner-ornament.tr { top: 20px; right: 20px; transform: scaleX(-1); }
+  .corner-ornament.bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+  .corner-ornament.br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+  /* CARD FRONT */
+  .card-front {
+    transform: rotateY(180deg);
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    padding: 32px 28px;
+    position: relative;
+  }
+
+  .card-front::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .card-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: rgba(201,168,76,0.5);
+    margin-bottom: 20px;
+  }
+
+  .card-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto 24px;
+  }
+
+  .affirmation-text {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: clamp(22px, 5vw, 30px);
+    line-height: 1.35;
+    color: var(--cream);
+    text-align: center;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    padding: 10px 4px;
+  }
+
+  .card-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .card-divider-bottom {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .card-tag {
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    color: rgba(201,168,76,0.45);
+    text-transform: uppercase;
+  }
+
+  /* FLAME accent */
+  .flame-accent {
+    position: absolute;
+    bottom: 32px;
+    right: 28px;
+    font-size: 28px;
+    opacity: 0.6;
+    filter: drop-shadow(0 0 8px rgba(193,52,26,0.6));
+    animation: flicker 2.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes flicker {
+    0% { opacity: 0.5; transform: scale(1) rotate(-3deg); }
+    50% { opacity: 0.7; transform: scale(1.05) rotate(2deg); }
+    100% { opacity: 0.55; transform: scale(0.97) rotate(-1deg); }
+  }
+
+  /* DRAW BUTTON */
+  .draw-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.3em;
+    padding: 18px 56px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  }
+
+  .draw-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-101%);
+    transition: transform 0.3s ease;
+  }
+
+  .draw-btn:hover::before { transform: translateX(0); }
+  .draw-btn:hover { color: var(--black); }
+
+  .draw-btn span { position: relative; z-index: 1; }
+
+  .draw-btn:active { transform: scale(0.97); }
+
+  /* COUNTER */
+  .counter {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(240,232,216,0.25);
+    margin-top: 24px;
+    text-transform: uppercase;
+  }
+
+  /* Shake animation for new card */
+  @keyframes shake-in {
+    0% { transform: rotateY(180deg) rotateZ(-2deg) scale(0.95); }
+    30% { transform: rotateY(180deg) rotateZ(1deg) scale(1.02); }
+    60% { transform: rotateY(180deg) rotateZ(-0.5deg) scale(0.99); }
+    100% { transform: rotateY(180deg) rotateZ(0deg) scale(1); }
+  }
+
+  .card.flipped.shake { animation: shake-in 0.5s ease forwards; }
+
+  /* Glow on flip */
+  .card-scene.glowing .card-front {
+    box-shadow: 0 0 60px rgba(201,168,76,0.15), inset 0 0 40px rgba(0,0,0,0.3);
+  }
+
+  /* Particles */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 16px;
+    animation: particle-float 2s ease-out forwards;
+    z-index: 100;
+  }
+
+  @keyframes particle-float {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
+  }
+
+  .todays-card-label {
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.4);
+    margin-bottom: -30px;
+    margin-top: 10px;
+    align-self: center;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.5s;
+  }
+
+  .todays-card-label.visible { opacity: 1; }
+
+  .instructions {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: rgba(240,232,216,0.2);
+    text-align: center;
+    margin-top: -10px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>DRAW<span>YOUR TRUTH</span></h1>
+    <p>One card. One day. No bullshit.</p>
+  </div>
+
+  <div class="todays-card-label" id="todaysLabel">✦ Today's Card ✦</div>
+
+  <div class="card-scene" id="cardScene">
+    <div class="card" id="card">
+
+      <!-- BACK -->
+      <div class="card-face card-back">
+        <svg class="corner-ornament tl" viewBox="0 0 40 40" fill="none">
+          <path d="M2 38 L2 2 L38 2" stroke="#c9a84c" stroke-width="1.5"/>
+          <path d="M2 20 L10 12 L20 20 L10 28 Z" fill="rgba(201,168,76,0.3)" stroke="#c9a84c" stroke-width="0.5"/>
+        </svg>
+        <svg class="corner-ornament tr" viewBox="0 0 40 40" fill="none">
+          <path d="M2 38 L2 2 L38 2" stroke="#c9a84c" stroke-width="1.5"/>
+          <path d="M2 20 L10 12 L20 20 L10 28 Z" fill="rgba(201,168,76,0.3)" stroke="#c9a84c" stroke-width="0.5"/>
+        </svg>
+        <svg class="corner-ornament bl" viewBox="0 0 40 40" fill="none">
+          <path d="M2 38 L2 2 L38 2" stroke="#c9a84c" stroke-width="1.5"/>
+          <path d="M2 20 L10 12 L20 20 L10 28 Z" fill="rgba(201,168,76,0.3)" stroke="#c9a84c" stroke-width="0.5"/>
+        </svg>
+        <svg class="corner-ornament br" viewBox="0 0 40 40" fill="none">
+          <path d="M2 38 L2 2 L38 2" stroke="#c9a84c" stroke-width="1.5"/>
+          <path d="M2 20 L10 12 L20 20 L10 28 Z" fill="rgba(201,168,76,0.3)" stroke="#c9a84c" stroke-width="0.5"/>
+        </svg>
+        <div class="back-symbol">🔥</div>
+        <div class="back-label">Draw Your Truth</div>
+        <div class="back-sub">Click to reveal</div>
+      </div>
+
+      <!-- FRONT -->
+      <div class="card-face card-front">
+        <div class="card-number" id="cardNumber">— I —</div>
+        <div class="card-divider"></div>
+        <div class="affirmation-text" id="affirmationText">Your truth is loading...</div>
+        <div class="card-bottom">
+          <div class="card-divider-bottom"></div>
+          <div class="card-tag">Draw Your Truth ✦ Daily Affirmation</div>
+        </div>
+        <div class="flame-accent">🔥</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="instructions" id="instructions">Click the card to reveal your truth</div>
+
+  <button class="draw-btn" id="drawBtn" onclick="drawCard()" style="margin-top: 32px;">
+    <span>DRAW NEW CARD</span>
+  </button>
+
+  <div class="counter" id="counterText">100 affirmations in the deck</div>
+</div>
+
+<script>
+const affirmations = [
+  "You are not behind. You are right on fucking time, doing exactly what you need to be doing.",
+  "Babe, they didn't leave room for you at the table because they were terrified of what you'd say when you sat down.",
+  "Every single person who doubted you is going to have a very uncomfortable front-row seat to your success.",
+  "You didn't come this far to only come this fucking far. Keep going.",
+  "Stop being the villain in your own story. You're the goddamn hero — act accordingly.",
+  "Your dreams aren't too big. Your circle is just too small. Upgrade both.",
+  "You have walked through fire and somehow still smell like flowers. That's not luck — that's power.",
+  "The audacity of you to still be standing after everything you've been through. Absolute legend.",
+  "Fuck their timeline. Fuck their expectations. Build your life by your own damn rules.",
+  "You are not a work in progress. You are a masterpiece in motion — stop treating yourself like a rough draft.",
+  "Every scar on you is a receipt that says 'tried to break this one, failed miserably.'",
+  "The people who couldn't handle you were not your people. Your people are still coming. Hold the fuck on.",
+  "Rest is not surrender. Rest is how you reload before you absolutely annihilate the next obstacle.",
+  "You are not too intense. You are not too much. You are exactly enough and the wrong ones just couldn't handle the heat.",
+  "Your gut has never lied to you. Your brain talked you out of listening to it. Trust your gut today.",
+  "Comparison is a waste of your extraordinary fucking time. Nobody is running your race.",
+  "You have survived 100% of your worst days. Your success rate is flawless.",
+  "Stop editing yourself for an audience that doesn't even deserve the original.",
+  "The fire in you is not a problem to be managed. It's a weapon. Aim it well.",
+  "You belong everywhere you decide to walk into. No permission slip required.",
+  "Other people's opinions of you are background noise. You are the main fucking event.",
+  "The universe didn't make you this resilient for you to give up over something this small.",
+  "You are building an empire, brick by fucking brick, while everyone else is questioning the architect. Keep building.",
+  "Darling, you were not built to be palatable. You were built to be unforgettable.",
+  "Hard times are not your permanent address. You are just passing through on your way to something extraordinary.",
+  "Do it scared. Do it broke. Do it ugly. Do it tired. Just fucking do it.",
+  "You are not waiting for your moment. You are the moment. Show up like you know that.",
+  "Let go of the version of yourself that needed their approval. She was holding you back anyway.",
+  "You don't need to earn rest. You don't need to earn joy. You deserve both simply by breathing.",
+  "The things that make you weird are the things that will make you legendary. Protect them.",
+  "Stop rehearsing failure in your head and start rehearsing the victory. It's coming — be fucking ready.",
+  "Your worth is not determined by your productivity. You matter on your worst, laziest, most broken day.",
+  "No one is coming to save you, which is the most empowering thing I can possibly tell you.",
+  "The version of your life you deserve is on the other side of you stopping your own bullshit.",
+  "You were not made to fit in. You were made to stand the fuck out and you know it.",
+  "Walk away from anything that makes you feel like you need to be smaller. That's not humility — that's suffocation.",
+  "Your ambition is not arrogance. It is a calling from the deepest part of you. Answer it without apology.",
+  "Protect your peace the way a dragon protects its gold. Ferociously. Without explanation.",
+  "You are not broken. You are being forged. There is a difference and it matters enormously.",
+  "Every expert alive was once a terrified beginner who decided not to quit. Today, decide not to quit.",
+  "Stop punishing yourself for being human. You were never supposed to be perfect — just real.",
+  "You are not asking for too much. You have simply been asking the wrong fucking people.",
+  "The next chapter of your story is the one where everything changes. Start writing it today.",
+  "Your presence alone changes the energy of a room. Don't you dare underestimate that power.",
+  "You have earned every single scar, lesson, and ounce of wisdom you carry. Wear it like armor.",
+  "Be so brilliantly, unapologetically yourself that the copycats don't even know where to begin.",
+  "Boundaries aren't walls — they're the velvet rope to the most exclusive venue in existence: your life.",
+  "You are not stuck. You are in the messy, uncomfortable, necessary middle. Push through.",
+  "The doubts in your head are roommates who don't pay rent. Evict those fuckers immediately.",
+  "Growth is supposed to feel like your skin is on fire. That burning sensation? That's you expanding.",
+  "You are the answer to a question the universe has been sitting with for a very long time.",
+  "One brave decision to bet on yourself will change the entire trajectory of your life. Make it.",
+  "Your sensitivity is not your weakness. It is your sharpest, most powerful fucking edge.",
+  "You don't dim yourself to make others comfortable. That's their comfort — your job is your light.",
+  "You are worth fighting for — especially by the one person who matters most, which is you.",
+  "They tried to bury you not knowing you were a fucking seed. Look at you growing.",
+  "Your story isn't even close to over. The best chapters are the ones you haven't written yet.",
+  "The version of you that shows up today — messy, imperfect, still trying — is more than enough.",
+  "You have permission to want exactly what you want, without explaining it to a single soul.",
+  "Quit playing nice when the situation calls for fierce. Know the fucking difference.",
+  "You are not running out of time. Time is not running out on you. You are exactly on schedule.",
+  "Everything you've been through has been preparing you for the thing you cannot yet see coming. Trust it.",
+  "The most radical, revolutionary thing you can do in this world is love yourself without conditions.",
+  "You are a force of fucking nature and it is time you started acting like the weather.",
+  "Asking for help isn't weakness — it is the most powerful move a confident person can make.",
+  "Your mess is not your identity. Your mess is your origin story. Own the whole thing.",
+  "Stop living like you need their applause to take the stage. This is your show.",
+  "You have made it through every single hard day in your life. Your record is goddamn perfect.",
+  "The path forward exists even when you can't see it. It is there. Keep walking.",
+  "You carry more magic in you than you have ever once given yourself credit for.",
+  "This is not a rehearsal. This is your actual life. Live it with everything you have.",
+  "You are not what happened to you. You are everything you chose to do after.",
+  "The energy you've been wasting on self-doubt could literally move mountains. Redirect that shit.",
+  "You deserve a life that sets your soul on fire, not just one that's manageable. Go build that.",
+  "Progress doesn't always look pretty from the inside. Trust the process even when it looks like chaos.",
+  "Your potential is not up for debate — not by them, not by your fears, not even by you on a bad day.",
+  "You are not too much for the right people. You are everything. Never apologize for that.",
+  "The hard road is the one that leads somewhere worth going. You chose it. That took guts.",
+  "Trust the version of yourself that refused to quit when everything told them to. They were right.",
+  "You've outgrown rooms before and you'll outgrow this one too. Expansion is your nature.",
+  "What other people think of your journey is absolutely none of your magnificent business.",
+  "You are not waiting on a miracle, honey — you are the fucking miracle that already happened.",
+  "Smart as hell. Strong as fuck. Still standing. That's you. Don't forget it for one single second.",
+  "You are allowed to change your mind, change direction, and change your entire life at any moment.",
+  "Nobody gets to define what's possible for you except the person reading this card right now.",
+  "The world will benefit enormously from you operating at full, unfiltered, unapologetic power.",
+  "You have been through the kind of things that would have broken most people. You are not most people.",
+  "There is not a single version of your future where you didn't make it. Keep walking toward it.",
+  "Stop waiting for the perfect moment. The perfect moment is always right now, right here, with what you have.",
+  "Healing isn't pretty and it isn't fast. But you are healing. That is worth celebrating every single day.",
+  "You are not behind where you're supposed to be. You are building what most people don't have the guts to build.",
+  "The only box you were ever supposed to fit in is the one you build yourself. Make it magnificent.",
+  "You came from something hard. You built something real. You are going somewhere extraordinary. Never doubt that.",
+  "Whoever told you that you weren't capable was simply describing their own limitations. Leave them there.",
+  "You are the kind of person that storms remember. The kind that changes rooms just by entering them.",
+  "Every single morning you wake up and try again is an act of profound, defiant courage. Don't minimize it.",
+  "Your light is not something you have to earn or deserve — it is what you are made of. Shine it.",
+  "The version of yourself that is fearless and free and fully alive? She's not a fantasy. She's fucking next.",
+  "You have already done the hardest thing — you kept going when every part of you wanted to stop.",
+  "Today you choose yourself. Loudly, completely, and without a single goddamn apology."
+];
+
+let drawn = new Set();
+let currentIndex = null;
+let isFlipped = false;
+
+function toRoman(n) {
+  const vals = [100,90,50,40,10,9,5,4,1];
+  const syms = ['C','XC','L','XL','X','IX','V','IV','I'];
+  let result = '';
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { result += syms[i]; n -= vals[i]; }
+  }
+  return result;
+}
+
+function spawnParticles(x, y) {
+  const emojis = ['✦', '⚡', '🔥', '✨', '💥', '⚔️'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    const angle = (Math.random() * 360) * Math.PI / 180;
+    const dist = 80 + Math.random() * 120;
+    p.style.cssText = `left:${x}px; top:${y}px; --dx:${Math.cos(angle)*dist}px; --dy:${Math.sin(angle)*dist}px;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2000);
+  }
+}
+
+function drawCard() {
+  if (drawn.size >= affirmations.length) drawn.clear();
+
+  let idx;
+  do { idx = Math.floor(Math.random() * affirmations.length); } while (drawn.has(idx));
+  drawn.add(idx);
+  currentIndex = idx;
+
+  const card = document.getElementById('card');
+  const scene = document.getElementById('cardScene');
+
+  // Flip to back first if already showing front
+  if (isFlipped) {
+    card.classList.remove('shake');
+    card.classList.remove('flipped');
+    isFlipped = false;
+    setTimeout(() => setCardContent(idx, card, scene), 500);
+  } else {
+    setCardContent(idx, card, scene);
+  }
+}
+
+function setCardContent(idx, card, scene) {
+  document.getElementById('affirmationText').textContent = affirmations[idx];
+  document.getElementById('cardNumber').textContent = `— ${toRoman(idx + 1)} —`;
+
+  setTimeout(() => {
+    card.classList.add('flipped');
+    void card.offsetWidth;
+    card.classList.add('shake');
+    scene.classList.add('glowing');
+    isFlipped = true;
+
+    document.getElementById('todaysLabel').classList.add('visible');
+    document.getElementById('instructions').textContent = `Card ${idx + 1} of ${affirmations.length} · ${affirmations.length - drawn.size} remaining`;
+
+    const rect = scene.getBoundingClientRect();
+    spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }, 100);
+}
+
+// Click on card to draw
+document.getElementById('card').addEventListener('click', () => {
+  if (!isFlipped) drawCard();
+});
+
+// Initial counter
+document.getElementById('counterText').textContent = `${affirmations.length} affirmations in the deck`;
+</script>
+</body>
+</html>
